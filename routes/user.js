@@ -1,27 +1,34 @@
 const express=require('express');
 const router=new express.Router();
 const user=require('../models/user.js');
+const auth=require('../middleware/auth.js');
 router.post('/users',async(req,res)=>
 		{
 	        try{
 				const addeduser=await user.create(req.body);
-				res.status(201).send(addeduser);
+				const token=await addeduser.generatetoken();
+				res.status(201).send({addeduser,token});
 			}
 	catch(e)
 		{
 			res.status(400).send(e);
 		}
 		 });
-router.get('/users',async(req,res)=>
+router.get('/users/me',auth,async(req,res)=>
 	   {
+	res.send(req.founduser);
+});
+router.post('/users/login',async(req,res)=>
+		   {
 	try{
-	const foundusers=await user.find({});
-		res.send(foundusers);
-	}
-	catch(e)
+	const founduser=await user.findByCredentials(req.body.email,req.body.password);
+		const token= await founduser.generatetoken();
+		res.send({founduser,token});
+	}catch(e)
 		{
-			res.status(500).send(e);
+			res.status(400).send(e);
 		}
+	
 });
 router.get('/users/:id',async(req,res)=>
 	   {
@@ -50,9 +57,15 @@ router.patch('/users/:id',async(req,res)=>{
 		}
 	
 	try{
-	const updateduser= await user.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});
+	// const updateduser= await user.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});
+		const founduser=await user.findById(req.params.id);
+		updates.forEach((update)=>{
+			founduser[update]=req.body[update];
+		});
+		const updateduser=await founduser.save();
 		
-	if(!updateduser){
+		
+	if(!founduser){
 		res.status(404).send();
 	}else{
 				res.send(updateduser);
@@ -72,6 +85,32 @@ router.delete('/users/:id',async(req,res)=>{
 		else{
 		res.send(deleteduser);
 		}
+	}catch(e)
+		{
+			res.status(500).send(e);
+		}
+});
+router.post('/users/logout',auth,async(req,res)=>
+		   {
+	try{
+	req.founduser.tokens=req.founduser.tokens.filter((token)=>
+	{
+		return token.token!==req.token;
+		
+	});
+	await req.founduser.save();
+		res.send("succeeded");
+	}catch(e){
+		res.status(500).send(e);
+	}
+	
+
+});
+router.post('/users/logoutall',auth,async(req,res)=>{
+	try{
+		req.founduser.tokens=[];
+		await req.founduser.save();
+		res.send("Logged out from all devices");
 	}catch(e)
 		{
 			res.status(500).send(e);
