@@ -1,5 +1,6 @@
 var mongoose=require('mongoose');
 var validator=require('validator');
+var user=require('./user.js');
 var taskschema=new mongoose.Schema({
 	description:
 	{
@@ -11,6 +12,11 @@ var taskschema=new mongoose.Schema({
 	{
 		type:Boolean,
 		default:false
+	},
+	owner:{
+		type:mongoose.Schema.Types.ObjectId,
+		required:true,
+		ref:'user'
 	}
 });
 var task=mongoose.model('task',taskschema);

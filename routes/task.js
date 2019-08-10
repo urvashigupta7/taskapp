@@ -1,11 +1,17 @@
 const express=require('express');
 const router=new express.Router();
 const task=require('../models/task.js');
+const auth=require('../middleware/auth.js');
 
-router.post('/tasks',async(req,res)=>
+router.post('/tasks',auth,async(req,res)=>
 		{
+	
+	
 	        try{
+				req.body.owner=req.founduser._id;
 				const addedtask=await task.create(req.body);
+				const full=await addedtask.populate('owner').execPopulate();
+			
 				res.status(201).send(addedtask);
 			}
 	catch(e)
@@ -13,9 +19,9 @@ router.post('/tasks',async(req,res)=>
 			res.status(400).send(e);
 		}
 		 });
-router.get('/tasks',(req,res)=>
+router.get('/tasks',auth,(req,res)=>
 	   {
-	task.find({}).then((result)=>
+	task.find({owner:req.founduser._id}).then((result)=>
 					  {
 		res.status(201).send(result);
 	}).catch((e)=>
@@ -23,10 +29,10 @@ router.get('/tasks',(req,res)=>
 		res.status(500).send(e);
 	});
 });
-router.get('/tasks/:id',async(req,res)=>
+router.get('/tasks/:id',auth,async(req,res)=>
 	   {
 	try{
-		const foundtask=await task.findById(req.params.id);
+		const foundtask=await task.findOne({_id:req.params.id,owner:req.founduser._id});
 		if(!foundtask)
 			{
 				res.status(404).send();
@@ -41,7 +47,7 @@ router.get('/tasks/:id',async(req,res)=>
 		}
 });
 
-router.patch('/tasks/:id',async(req,res)=>
+router.patch('/tasks/:id',auth,async(req,res)=>
 		 {
 	const allowedupdates=['description','completed'];
 	const updates=Object.keys(req.body);
@@ -51,26 +57,32 @@ router.patch('/tasks/:id',async(req,res)=>
 			return res.status(400).send('Invalid Operation');
 		}
 	try{
-		const updatedtask=await task.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true});
-		if(!updatedtask)
+		const tobeupdated=await task.findOne({_id:req.params.id,owner:req.founduser._id});
+		if(!tobeupdated)
 			{
 				res.status(404).send();
 			}
 		else
 			{
-				res.send(updatedtask);
+				updates.forEach((update)=>
+							   {
+					tobeupdated[update]=req.body[update];
+				});
+				await tobeupdated.save();
+				res.send(tobeupdated);
 			}
+		
 	}
 	catch(e){
 		res.status(500).send(e);
 	}
 });
 
-router.delete('/tasks/:id',async(req,res)=>{
+router.delete('/tasks/:id',auth,async(req,res)=>{
 	try{
-		const deletedtask=await task.findByIdAndDelete(req.params.id);
+		const deletedtask=await task.findOneAndDelete({_id:req.params.id,owner:req.founduser._id});
 		if(!deletedtask){
-			 res.status(404).send();
+			return res.status(404).send();
 		}
 		else{
 		res.send(deletedtask);

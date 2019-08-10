@@ -2,6 +2,7 @@ var mongoose=require('mongoose');
 var validator=require('validator');
 var bcrypt=require('bcrypt');
 const jwt = require('jsonwebtoken');
+var task=require('./task.js');
 var userschema=new mongoose.Schema(
 {
 	name:
@@ -50,6 +51,24 @@ var userschema=new mongoose.Schema(
 		}
 	}]
 });
+userschema.virtual('tasks',{
+	ref:'task',
+	localField:'_id',
+	foreignField:'owner'
+})
+userschema.pre('remove',async function(next){
+	const user=this;
+	await task.deleteMany({owner:user._id});
+	return next();
+})
+userschema.methods.toJSON=function()
+{
+	const user=this;
+	const userobject=user.toObject();
+	delete userobject.tokens;
+	delete userobject.password;
+	return userobject;
+}
 userschema.statics.findByCredentials=async(email,password)=>
 {
 	const finduser= await user.findOne({email:email});
