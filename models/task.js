@@ -18,6 +18,8 @@ var taskschema=new mongoose.Schema({
 		required:true,
 		ref:'user'
 	}
+},{
+	timestamps:true
 });
 var task=mongoose.model('task',taskschema);
 module.exports=task;

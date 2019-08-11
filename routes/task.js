@@ -21,13 +21,38 @@ router.post('/tasks',auth,async(req,res)=>
 		 });
 router.get('/tasks',auth,(req,res)=>
 	   {
-	task.find({owner:req.founduser._id}).then((result)=>
+	var completed="";
+	var sort={};
+	if(req.query.sortby)
+		{
+			const parts=req.query.sortby.split(":");
+			sort[parts[0]]=parts[1]==='desc'?-1:1;
+		}
+	console.log(sort);
+	if(req.query.completed)
+		{
+			completed=req.query.completed==='true'
+		}
+	if(completed==="")
+		{
+		task.find({owner:req.founduser._id}).limit(parseInt(req.query.limit)).skip(parseInt(req.query.skip)).sort(sort).then((result)=>
+					  {
+		res.status(201).send(result);
+	}).catch((e)=>
+			{
+		res.status(500).send(e);
+	});	
+		}
+	else{
+	
+	task.find({owner:req.founduser._id,completed:completed}).limit(parseInt(req.query.limit)).skip(parseInt(req.query.skip)).sort(sort).then((result)=>
 					  {
 		res.status(201).send(result);
 	}).catch((e)=>
 			{
 		res.status(500).send(e);
 	});
+	}
 });
 router.get('/tasks/:id',auth,async(req,res)=>
 	   {
