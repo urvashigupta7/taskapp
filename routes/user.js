@@ -2,6 +2,8 @@ const express=require('express');
 const router=new express.Router();
 const user=require('../models/user.js');
 const auth=require('../middleware/auth.js');
+const multer=require('multer');
+const sharp=require('sharp');
 router.post('/users',async(req,res)=>
 		{
 	        try{
@@ -114,4 +116,49 @@ router.post('/users/logoutall',auth,async(req,res)=>{
 			res.status(500).send(e);
 		}
 });
+const upload=multer({
+	
+	limits:
+	{
+		fileSize:1000000
+	},
+	fileFilter(req,file,cb){
+		if(!file.originalname.match(/\.(jpg|png|jpeg)$/))
+		   {
+		    return cb(new Error('Please upload an image'))
+		   }
+		   else{
+		   cb(undefined,true);
+		   }
+	}
+})
+router.post('/users/me/avatar',auth,upload.single('images'),async(req,res)=>{
+	const buffer=await sharp(req.file.buffer).resize({width:400,height:400}).toBuffer();
+	req.founduser.avatar=buffer;
+	await req.founduser.save();
+	res.send();
+},(error,req,res,next)=>{
+	res.status(400).send({error:error.message});
+})
+router.delete('/users/me/avatar',auth,async(req,res)=>{
+	req.founduser.avatar=undefined;
+	await req.founduser.save();
+	res.send();
+})
+router.get('/users/:id/avatar',async(req,res)=>{
+	try{
+	const founduser=await user.findById(req.params.id);
+		if(!founduser||!founduser.avatar)
+			{
+				throw new Error();
+			}
+	res.set('Content-Type','image/jpg');
+	res.send(founduser.avatar)
+	}
+	catch(e)
+		{
+			res.status(404).send(e);
+		}
+	
+})
 module.exports=router;

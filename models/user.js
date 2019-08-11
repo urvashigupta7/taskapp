@@ -49,7 +49,10 @@ var userschema=new mongoose.Schema(
 			type:String,
 			required:true
 		}
-	}]
+	}],
+	avatar:{
+		type:Buffer
+	}
 },{
 	timestamps:true
 });
@@ -69,6 +72,7 @@ userschema.methods.toJSON=function()
 	const userobject=user.toObject();
 	delete userobject.tokens;
 	delete userobject.password;
+	delete userobject.avatar;
 	return userobject;
 }
 userschema.statics.findByCredentials=async(email,password)=>
