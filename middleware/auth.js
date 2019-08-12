@@ -4,7 +4,7 @@ const auth=async function(req,res,next)
 {
 	try{
 	const token=req.header('Authorization').replace('Bearer ','');
-	const decoded=jwt.verify(token,'mynewcourse');
+	const decoded=jwt.verify(token,process.env.jwtsecretkey);
 	const founduser=await user.findOne({_id:decoded._id,'tokens.token':token});
 	if(!founduser)
 		{

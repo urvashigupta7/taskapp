@@ -94,7 +94,7 @@ userschema.statics.findByCredentials=async(email,password)=>
 userschema.methods.generatetoken=async function()
 {
 	const user=this;
-	const token=jwt.sign({_id:user._id.toString()},'mynewcourse');
+	const token=jwt.sign({_id:user._id.toString()},process.env.jwtsecretkey);
 	user.tokens=user.tokens.concat({token});
 	await user.save();
 	return token;

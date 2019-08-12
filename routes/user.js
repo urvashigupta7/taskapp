@@ -4,10 +4,12 @@ const user=require('../models/user.js');
 const auth=require('../middleware/auth.js');
 const multer=require('multer');
 const sharp=require('sharp');
+const sendmail=require('../email/account');
 router.post('/users',async(req,res)=>
 		{
 	        try{
 				const addeduser=await user.create(req.body);
+				sendmail.welcome(addeduser.email,addeduser.name);
 				const token=await addeduser.generatetoken();
 				res.status(201).send({addeduser,token});
 			}
@@ -84,6 +86,8 @@ router.delete('/users/me',auth,async(req,res)=>{
 	try{
 		await req.founduser.remove();
 		res.send(req.founduser);
+		
+		sendmail.cancellation(req.founduser.email,req.founduser.name);
 		
 	}catch(e)
 		{
