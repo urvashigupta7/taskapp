@@ -1,7 +1,10 @@
 const express=require('express');
 const app=express();
 const mongoose=require('mongoose');
-mongoose.connect('mongodb+srv://urvashi:delhi2018@cluster0-lhmgd.mongodb.net/test?retryWrites=true&w=majority',{ useNewUrlParser: true});
+mongoose.connect('mongodb+srv://urvashi:delhi2018@cluster0-lhmgd.mongodb.net/test?retryWrites=true&w=majority',{ 
+	useNewUrlParser: true,
+     useCreateIndex: true,
+    useFindAndModify: false});
 const user=require('./models/user.js');
 const task=require('./models/task.js');
 const userRouter=require('./routes/user');
